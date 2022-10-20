@@ -3,7 +3,7 @@ title: WonderlandOfCPP
 author: HouChen
 date: 2022-06-29 18:32:00 +0800
 categories: [C++, Basics]
-tags: [c++, syntax]
+tags: [c++, syntax, basics]
 ---
 
 # WonderlandOfCpp
