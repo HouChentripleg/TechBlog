@@ -1,8 +1,8 @@
 ---
-title: 并发编程基础(thread, mutex, cv, future)
-author: HouChen
-date: 2022-10-31 18:30:00 +0800
-categories: [C++, Concurrency]
+title: ConcurrencyBasics(thread, mutex, cv, future)
+author: Hou Chen
+date: 2022-10-31 18:45:00 +0800
+categories: [C++, Concurrency, Basics]
 tags: [c++, concurrency, basics]
 ---
 
@@ -44,10 +44,12 @@ int main() {
 - 编译细节：Linux编译命令行需要添加`-pthread`参数
 
 ## 线程分离
+
 |API|说明|
 |---|---|
 |join|阻塞主线程直至子线程运行结束|
 |detach|子线程独立执行|
+
 - 必须在thread对象销毁前（例如上面那段代码，在结束main()跳出scope{}时发生thread对象的销毁）决定使用`join`还是`detach`，否则thread对象调用析构函数dtor时会在调用`std::terminate`时异常退出
 - 调用`join`：主线程（此处指`main()`）一直阻塞在`join`，直至子线程（此处指`func()`）完成任务
 - 调用`detach`：子线程独立运行，成为守护线程，即便thread对象销毁也不影响子线程内部任务的执行，并且主线程再也无法与子线程进行通信
@@ -127,7 +129,7 @@ int main() {
 }
 ```
 
-# 锁
+# Mutual Exclusion
 
 > 多线程很容易出现共享资源的竞争问题，互斥锁能保证每个线程对共享数据的互斥访问
 {: .prompt-info }
@@ -175,6 +177,7 @@ int main() {
 - `unique_lock`不可复制，但可以移动，使得它可以被函数回传，也能放入STL容器中，还能显示调用`lock()`和`unlock()`，比`lock_guard`更灵活，但占用空间更大且更慢
 使用条件变量时必须使用`unique_lock`
 - `scoped_lock`将多个锁包装成一种锁类，用于线程一次性申请多个锁，避免死锁
+
 ```c++
 #include <iostream>
 #include <vector>
@@ -317,7 +320,7 @@ int main() {
 }
 ```
 
-# 条件变量
+# std::condition_variable
 
 > 条件变量的创建是为了唤醒等待中的线程从而避免死锁，条件变量始终关联着一个互斥锁
 {: .prompt-info }
@@ -346,7 +349,7 @@ enum class cv_status {
 |wait_for()|指定时长地阻塞当前线程，直至条件变量被唤醒|
 |wait_until()|指定时间点地阻塞当前线程，直至条件变量被唤醒|
 
-## 生产者-消费者模型
+## Producer-Consumer
 
 ```c++
 #include <iostream>
@@ -433,7 +436,7 @@ int main() {
 */
 ```
 
-# std::future
+# Futures
 
 ## Preview
 > 没有future类之前，如何获取后台任务的执行结果？传统做法是使用信号量or条件变量，c++20才支持信号量，这里我们先用条件变量来实现
@@ -491,7 +494,6 @@ int main() {
 - 为了一个小小的result，我们竟然定义了5个变量(cv, mtx, thread, lck, result)，还用了`std::ref()`传递cv和result的引用给线程的ctor(因为线程ctor默认通过值拷贝的方式传递参数)，写起来非常繁琐，所以就诞生了future
 - 当然C++11之前也可以使用全局变量去存储result，主线程需要时再去取
 
-## futures
 |class/function/enum|c++标准|说明|
 |---|---|---|
 |async|c++11|function template, 异步运行一个函数，并返回存储结果的std::future类型的对象|
@@ -500,13 +502,14 @@ int main() {
 |promise|c++11|class template, 存储一个值以进行异步获取，只能move不能copy |
 |shared_future|c++11| class template, 允许多个线程等待同一个shared state, 可copy, 多个shared_future对象能指向同一个shared state |
 
-## async
+## std::async
+
 |异步执行策略|说明|
 |---|---|
 |std::launch::async|开启新线程，立刻异步执行任务|
 |std::launch::deferred|lazy evaluation, 调用方第一次请求结果时才执行任务|
 
-## future
+## std::future
 - 异步操作是指通过`std::async, std::packaged_task, std::promise`创建的操作
 - 以上的异步操作会向创建者提供一个std::future类型的对象object
 - 异步操作的创建者可以从这个object中查询，等待并获取异步操作的结果，若结果not ready，就阻塞等待
@@ -542,7 +545,7 @@ int main() {
 - 与使用条件变量的例子相比，使用std::future就只产生了一个future对象
 - 使用成员函数`get()`可以获得异步操作的结果or异常，注意一个future对象只能调用一次`get()`，第二次调用是未定义的行为，会导致程序crash down，所以也不建议future对象在多线程中使用(吴老师提到这种情况可以move-ctor一个shared_future，或者调用future的share()生成一个shared_future)
 
-## promise
+## std::promise
 - std::promise存储value或者exception，后续可以异步地被std::promise创建的std::future对象获取（相当于在promise-future这个channel通信中，promise作为push端，future作为pop端）
 - 每个promise对象都与future对象中的shared state关联，有3种状态:
     - ***ready***: promise对象将value或者exception存储到shared state中，标记state为ready状态，解除线程的阻塞等待
@@ -603,6 +606,7 @@ int main() {
 ```
 - 相比于function template: async来说，promise不需要在函数结尾的时候才去设置future的值（也就是说不用return
 - 还有一个有意思的点，使用void特化的promise-future对能对线程间的状态发信号，当一个线程在`future<void>`上等待时(使用get()或者wait())，另一个线程可以通过调用`promise<void>`的set_value()让它结束等待，继续往下执行
+
 ```c++
 #include <iostream>
 #include <future>
@@ -630,7 +634,7 @@ int main() {
 }
 ```
 
-## packaged_task
+## std::packaged_task
 - packaged_task可以包装任何callable target，包括function, lambda expression, bind expression还有functor
 - packaged_task不会自己启动，要其对象被调用时才会异步地执行任务，并将返回值or异常存储在shared state中，让future对象获取
 
@@ -679,6 +683,7 @@ int main() {
 }
 ```
 - 再来看看其他callable target的使用方法
+
 ```c++
 #include <iostream>
 #include <thread>
@@ -723,9 +728,10 @@ int main() {
 }
 ```
 
-## shared_future
+## std::shared_future
 - 虽然多个shared_future对象能指向同一个shared state，但每个线程如果通过它自身的shared_future对象(copy版)访问这同一个shared state，是线程安全的
 - 来看cppreference的一个例子，shared_future同时向多个线程发送信号，类似于`std::condition_variable::notify_all()`
+
 ```c++
 #include <iostream>
 #include <chrono>
