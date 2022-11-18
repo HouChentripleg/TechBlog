@@ -70,8 +70,8 @@ if(y.load(std::memory_order_acquire) == 2) {
 ```
 - 借用吴老师的图示意，每一边的代码都不允许重排越过黄色区域，且若y的release早于y的acquire，线程A中release之前对内存的修改在线程B的acquire后都是可见的(“可见”这个概念我们在后面解释Happens-before时再解释，大致理解起来就是执行acquire和release操作的两个线程能观察到相同的内存修改结果)
 
-![acquire/release](/_posts/img/Concurrency/barrier.png){: width="972" height="589" }
-_Full screen width and center alignment_
+![acquire/release](https://github.com/HouChentripleg/TechBlog/tree/main/_posts/img/Concurrency/barrier.png){: width="700" height="400" }
+_acquire/release_
 
 <br>
 
@@ -129,8 +129,8 @@ typedef std::atomic<long long> actomic_llong;
     - 如果线程A中的操作1 sequenced-before 操作2，操作2 inter-thread happens-before线程B中的操作3，那么操作1 inter-thread happens-before操作3
     - 如果线程A中的操作1 inter-thread happens-before线程B中的操作2，且操作2 inter-thread happens-before线程C的操作3，则操作1 inter-thread happens-before操作3
 
-![happens-before](/_posts/img/Concurrency/happensbefore.png){: width="972" height="589" }
-_Full screen width and center alignment_
+![happens-before](https://github.com/HouChentripleg/TechBlog/tree/main/_posts/img/Concurrency/happensbefore.png){: width="700" height="400" }
+_happens-before_
 
 <br>
 
