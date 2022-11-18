@@ -1,7 +1,7 @@
 ---
 title: ConcurrencyBasics(thread, mutex, cv, future)
 author: Hou Chen
-date: 2022-10-31 18:45:00 +0800
+date: 2022-6-21 18:45:00 +0800
 categories: [C++, Concurrency, Basics]
 tags: [c++, concurrency, basics]
 ---
@@ -128,6 +128,8 @@ int main() {
     return 0;
 }
 ```
+
+---
 
 # Mutual Exclusion
 
@@ -320,6 +322,8 @@ int main() {
 }
 ```
 
+---
+
 # std::condition_variable
 
 > 条件变量的创建是为了唤醒等待中的线程从而避免死锁，条件变量始终关联着一个互斥锁
@@ -357,6 +361,7 @@ enum class cv_status {
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include <atomic>
 #include <condition_variable>
 
 using namespace std;
@@ -365,7 +370,7 @@ int main() {
     queue<int> depository;  // 仓库
     mutex mtx;
     condition_variable cv;
-    bool notified = false;  // 通知信号
+    atomic<bool> notified = false;  // 通知信号
     int num = 0;
 
     // producer
@@ -435,6 +440,8 @@ int main() {
 140131052578368 is consuming 9
 */
 ```
+
+---
 
 # Futures
 
@@ -783,6 +790,8 @@ int main() {
 }
 ```
 - 30, 31行异步地开启新线程，2个线程执行cout后分别阻塞在16, 24行，直到主线程通过41行发送信号，2个自线程才继续执行（我在各个操作后加了输出，便于分析执行步骤）
+
+---
 
 # reference
 - [cppreference](https://en.cppreference.com/w/cpp/thread)
