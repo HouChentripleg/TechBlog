@@ -1,7 +1,7 @@
 ---
 title: MemoryManagment(Heap, Stack, RAII, SmartPointer)
 author: Hou Chen
-date: 2022-07-01 18:32:00 +0800
+date: 2022-07-03 18:32:00 +0800
 categories: [C++, Basics, MemoryManagment]
 tags: [c++, syntax, basics]
 ---
