@@ -3,7 +3,7 @@ title: WonderlandOfCPP(part2)
 author: Hou Chen
 date: 2022-04-20 18:32:00 +0800
 categories: [C++, Basics]
-tags: [c++, syntax, basics]
+tags: [c++, c++11, c++14, basics]
 ---
 
 > 本篇记录了一些C++11/14/17语法及STL库的细枝末节，有些细节以后用到还会再展开
