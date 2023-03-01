@@ -1,5 +1,5 @@
 ---
-title: WonderlandOfCPP
+title: WonderlandOfCPP(part1)
 author: Hou Chen
 date: 2022-04-10 18:32:00 +0800
 categories: [C++, Basics]
@@ -25,9 +25,10 @@ tags: [c++, syntax, basics]
     - `use_count()`: 查看对象的引用计数
     - `get()`: 返回shared_ptr类中的内置指针，便于和C语言衔接
     - `reset()`: 减少一个引用计数
-    - `std::make_shared<>()`: 避免显示调用`new`
-- 第二参数自定义Deleter：当制作内存池时，用完某个内存后不交给系统释放，通过自定义的Deleter可以放回内存池
+    - `std::make_shared<>()`: 避免显示调用`new`，避免代码重复且异常安全
 
+- 第二参数自定义Deleter：当制作内存池时，用完某个内存后不交给系统释放，通过自定义的Deleter可以放回内存池
+- 一个`shared_ptr`对象拥有一个**control block**，其内存放着该`shared_ptr`指向的对象和一个引用计数reference counter，对control block的访问是线程安全的，但对其内对象的访问并不是线程安全的
 - 支持数组
     - C++17支持`shared_ptr<T[]>`
     - C++20支持`make_shared<T[]>`
@@ -84,7 +85,34 @@ auro y = std::move(x);
 - `rbegin`, `rend`
 
 ## 移动迭代器
+
 - `move_iterator`
+
+## std::begin/end
+
+- `std::begin(container)`和`std::end(container)`函数分别返回container的begin/end iterator，对于原始的数组也能work
+
+```c++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+template <typename T>
+int CountTwos(const T& container) {
+    return std::count_if(std::begin(container), std::end(container), [](int elem) {
+        return elem == 2;
+    });
+}
+
+int main() {
+    std::vector<int> vec{1, 2, 2, 3, 4, 5};
+    int arr[5] = {1, 1, 2, 9, 6};
+    std::cout << CountTwos(vec) << std::endl;   // 2
+    std::cout << CountTwos(arr) << std::endl;   // 1
+
+    return 0;    
+}
+```
 
 ## 并行算法ExecutionPolicy
 
@@ -130,12 +158,47 @@ auro y = std::move(x);
 - 针对lambda函数体中使用的局部自动对象进行捕获，static不用捕获，可直接使用
 
 - 值捕获、引用捕获、混合捕获
+    - 值捕获的前提是变量可以拷贝，且在lambda表达式创建时就完成了拷贝
+    - 引用捕获的值是会变化的
 
-- this捕获
+- this捕获(C++14)
 
-- 初始化捕获(c++14)：在构造lambda类时即完成某些初始化的逻辑，避免在函数体里多次计算，提高性能；其次，初始化允许使用任意表达式，也就是说也允许右值捕获
+- 初始化捕获(C++14)：在构造lambda类时即完成某些初始化的逻辑，避免在函数体里多次计算，提高性能；其次，初始化允许使用任意表达式，也就是说也允许右值捕获
 
-- `*this`捕获(c++17)：this捕获存在丢失this指针指向内容的风险，所以引入`*this`
+```c++
+int func(int i) {
+    return i*10;
+}
+auto lambda = [x = func(2)] {   // 捕获右值
+    return x;
+}
+
+auto generator = [x = 0]() mutable {
+    return x++;
+}
+auto a = generator();   // 1
+auto b = generator();   // 2
+auto c = generator();   // 3
+
+auto p = std::make_unique<int>(1);
+auto task1 = [=]{ *p = 5; };    // error, unique_ptr can't be captured by '='(copying)
+auto task2 = [p = std::move(p)] {   // ok, p is move-constructed
+    *p = 5;
+}
+
+auto x = 1;
+auto f = [&r = x, x *= 10] {
+    ++r;
+    return r+x;
+}
+f();    // 12 = 2+10
+```
+
+- `*this`捕获(C++17)：this捕获存在丢失this指针指向内容的风险，所以引入`*this`
+
+## parameter list
+
+- C++14起允许()内使用`auto`
 
 ## 说明符
 
@@ -281,130 +344,3 @@ void func(T1 input1, T2 input2) {
     // ...
 }
 ```
-
-## 外部模板
-
-## alias template
-
-```c++
-using xxx = xxx
-```
-
-## variadic templates
-
-递归、变参模板展开、初始化列表展开
-
-## 折叠表达式
-
-## 非类型模板参数推导
-
-# 面向对象Object Oriented
-
-## 委托构造
-
-## 继承构造
-
-## 显示虚函数重载：override final
-
-## 显示禁用默认函数 =default =delete
-
-## 强类型枚举
-
-# 细枝末节
-
-## constexpr
-
-- `constexpr`修饰的表达式、函数在编译期即可确定结果
-
-- C++14起`constexpr`函数可以在内部使用局部变量、循环和分支等简单语句
-
-## if/switch语句中声明临时变量(C++17)
-
-## 初始化列表initializer_list(C++11)
-
-## 结构化绑定(C++17)
-
-## auto
-
-## decltype
-
-## decltype(auto)(C++14)
-
-## if constexpr(C++17)
-
-## range-based-for(C++11)
-
-## noexcept
-
-- C++11将异常的声明简化为函数可能抛出异常与函数不能抛出异常，并使用`noexcept`对这两种情况进行限制
-
-```c++
-void may_throw()
-void no_throw() noexcept;   // 如果no_throw()抛出异常，编译器会使用std::terminate()终止程序
-```
-
-- `noexcept`还可用于判断一个表达式是否有异常，无异常返回true，有异常返回false
-
-- `noexcept`修饰一个函数后能封锁异常扩散(sehr wichtig超级重要)
-
-## 字面量
-
-- 古早的C++传特殊字符会非常麻烦，需要添加大量转义符`\`，C++11提供了原始字符串字面量的写法
-
-```c++
-std::string str = "C:\\File\\To\\Path"; // long long ago
-std::string str = R"(C:\File\To\Path)"; // C++11
-```
-
-- 自定义字面量(C++11): 重载双引号后缀运算符
-
-## 内存对齐
-
-- C++11引入`alignof`和`alignas`支持内存对齐：前者能获得与当前平台相关的`std::size_t`类型的值，用于查询该平台的对齐方式；后者可以重新修饰某个struct的对齐方式，实现自定义对齐方式
-
-## extern "C"
-
-- 使用`extern "C"`将*.cpp中的某段代码{}起来，可以让编译器在执行到这一段时以C语言的方式处理，将C和C++分开编译、再统一链接
-
-## std::function(C++11)
-
-- `std::function`可以实现对callable object的封装
-
-## 右值引用
-
-- 纯右值(pure rvalue): 纯字面量、非引用返回的临时变量、运算表达式产生的临时变量、lambda表达式
-
-    > 字符串字面量在普通函数中时左值，在类中是右值
-
-- 将亡值(expring value)：即将被销毁、却能被移动的值
-
-```c++
-auto func() {
-    std::vector<int> tmp = {1, 2, 3, 4, 5};
-    return tmp;
-}
-std::vector<int> v = func();
-```
-
-`func()`返回的`tmp`是xvalue，C++11以后编译器自动将`tmp`隐式右值转换，等价于`static_cast<std::vector<int>&&>(tmp)`，避免拷贝
-
-- C++11提供`std::move()`将左值转为右值
-
-    > 非常量引用不允许绑定到非左值，常量引用允许绑定到非左值
-
-- 右值引用的声明可以让临时对象的生命周期延长
-
-## 移动语义move semantics
-
-## 完美转发
-
-- 引用坍缩
-
-| 函数形参类型 | 实参类型 | 推导后函数形参类型 |
-| :---: | :---: | :---:|
-| T& | 左引用 | T&|
-| T& | 右引用 | T&|
-| T&& | 左引用 | T&|
-| T&& | 右引用 | T&&|
-
-- `std::forward<>()`保证在传参时的参数类型保持不变(左引用保持左引用，右引用保持右引用)
